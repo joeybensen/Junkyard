@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #16141d;
+    --bg-2: #1c1a26;
+    --surface: #211f2c;
+    --surface-2: #262331;
+    --line: rgba(232,228,245,0.09);
+    --line-strong: rgba(232,228,245,0.16);
+    --ink: #e9e5f4;
+    --ink-dim: #a8a3bd;
+    --ink-faint: #726d87;
+
+    --lav: #b9a8f5;
+    --lav-soft: #dcd3fb;
+    --mint: #a3ddc4;
+    --mint-soft: #cdeee0;
+    --peach: #f3bd93;
+    --peach-soft: #f8dcc2;
+    --pink: #eda6c4;
+    --pink-soft: #f5d0e1;
+
+    --radius-blob: 255px 15px 225px 15px/15px 225px 15px 255px;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0; padding:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    min-height:100vh;
+  }
+
+  /* grain overlay */
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    z-index: 50;
+    pointer-events:none;
+    opacity:0.05;
+    mix-blend-mode: overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+
+  /* soft ambient background glows */
+  body::after{
+    content:"";
+    position:fixed; inset:0;
+    z-index:0;
+    pointer-events:none;
+    background:
+      radial-gradient(600px 400px at 8% -5%, rgba(185,168,245,0.10), transparent 60%),
+      radial-gradient(500px 350px at 95% 10%, rgba(163,221,196,0.08), transparent 60%),
+      radial-gradient(600px 500px at 50% 110%, rgba(237,166,196,0.06), transparent 60%);
+  }
+
+  .wrap{
+    position:relative;
+    z-index:1;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 48px 32px 100px;
+  }
+
+  /* ---------- header ---------- */
+  header{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:24px;
+    margin-bottom: 44px;
+    flex-wrap: wrap;
+  }
+
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+
+  .brand-mark{
+    width:42px; height:42px;
+    border-radius: var(--radius-blob);
+    background: linear-gradient(135deg, var(--lav), var(--pink));
+    position:relative;
+    flex-shrink:0;
+  }
+  .brand-mark::after{
+    content:"";
+    position:absolute; inset:6px;
+    border-radius: var(--radius-blob);
+    background: var(--bg);
+    opacity:0.15;
+  }
+
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size: 30px;
+    letter-spacing:-0.01em;
+    margin:0;
+    line-height:1;
+  }
+
+  .sub{
+    font-size:13px;
+    color: var(--ink-faint);
+    margin-top:6px;
+    font-family:'Caveat', cursive;
+    font-size:18px;
+    color: var(--lav-soft);
+  }
+
+  .period-pill{
+    align-self:center;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:9px 16px;
+    border:1.5px dashed var(--line-strong);
+    border-radius:100px;
+    font-size:13px;
+    color: var(--ink-dim);
+    background: var(--surface);
+  }
+  .period-pill svg{ opacity:0.7; }
+
+  /* ---------- squiggle underline for section titles ---------- */
+  .section-title{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    margin: 0 0 20px 2px;
+  }
+  .section-title h2{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:19px;
+    margin:0;
+    color: var(--ink);
+  }
+  .section-title .count{
+    font-size:12px;
+    color: var(--ink-faint);
+    font-family:'Inter';
+  }
+
+  /* ---------- stat blobs ---------- */
+  .stats{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:20px;
+    margin-bottom:48px;
+  }
+
+  .stat{
+    position:relative;
+    background: var(--surface);
+    border:1px solid var(--line);
+    border-radius: 22px;
+    padding:26px 24px 24px;
+    overflow:hidden;
+  }
+  .stat::before{
+    content:"";
+    position:absolute;
+    top:-40px; right:-40px;
+    width:130px; height:130px;
+    border-radius: var(--radius-blob);
+    opacity:0.16;
+    filter: blur(2px);
+  }
+  .stat.income::before{ background: var(--mint); }
+  .stat.spent::before{ background: var(--peach); }
+  .stat.remaining::before{ background: var(--lav); }
+
+  .stat-label{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12.5px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color: var(--ink-faint);
+    margin-bottom:14px;
+    font-weight:600;
+  }
+  .dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .stat.income .dot{ background: var(--mint); }
+  .stat.spent .dot{ background: var(--peach); }
+  .stat.remaining .dot{ background: var(--lav); }
+
+  .stat-value{
+    font-family:'Fraunces', serif;
+    font-size: 34px;
+    font-weight:600;
+    letter-spacing:-0.01em;
+    position:relative;
+    z-index:1;
+  }
+  .stat-value sup{ font-size:16px; opacity:0.55; font-weight:500; margin-right:2px; }
+
+  .stat-delta{
+    margin-top:10px;
+    font-size:12.5px;
+    color: var(--ink-dim);
+  }
+  .stat-delta.up{ color: var(--mint-soft); }
+  .stat-delta.down{ color: var(--pink-soft); }
+
+  /* ---------- layout grid: categories + recommendations ---------- */
+  .board{
+    display:grid;
+    grid-template-columns: 1.65fr 1fr;
+    gap:24px;
+    align-items:start;
+  }
+
+  .categories{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:18px;
+  }
+
+  .card{
+    background: var(--surface);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:20px 20px 18px;
+    position:relative;
+  }
+  /* hand-drawn corner accent */
+  .card::before{
+    content:"";
+    position:absolute;
+    top:14px; right:14px;
+    width:9px; height:9px;
+    border-radius:50%;
+    border:1.5px solid var(--accent, var(--lav));
+    opacity:0.55;
+  }
+
+  .card.cat-food{ --accent: var(--peach); }
+  .card.cat-home{ --accent: var(--lav); }
+  .card.cat-fun{ --accent: var(--pink); }
+  .card.cat-save{ --accent: var(--mint); }
+
+  .card-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:14px;
+  }
+
+  .card-head h3{
+    font-family:'Fraunces', serif;
+    font-size:16px;
+    font-weight:600;
+    margin:0 0 4px;
+  }
+  .card-head .cap{
+    font-size:11.5px;
+    color: var(--ink-faint);
+  }
+
+  .card-total{
+    font-family:'Fraunces', serif;
+    font-size:18px;
+    font-weight:600;
+    color: var(--accent, var(--ink));
+    white-space:nowrap;
+  }
+
+  /* sketchy progress bar */
+  .track{
+    height:7px;
+    border-radius:6px;
+    background: var(--surface-2);
+    border:1px solid var(--line);
+    overflow:hidden;
+    margin-bottom:16px;
+    position:relative;
+  }
+  .track .fill{
+    height:100%;
+    border-radius:6px;
+    background: var(--accent, var(--lav));
+    position:relative;
+  }
+  .track .fill::after{
+    content:"";
+    position:absolute; inset:0;
+    background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.12) 0 4px, transparent 4px 8px);
+  }
+
+  ul.items{
+    list-style:none;
+    margin:0; padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:9px;
+  }
+  ul.items li{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:13.5px;
+    color: var(--ink-dim);
+    padding-bottom:9px;
+    border-bottom: 1px dashed var(--line);
+  }
+  ul.items li:last-child{ border-bottom:none; padding-bottom:0; }
+
+  ul.items li .name{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    color: var(--ink);
+  }
+  ul.items li .name .mark{
+    width:14px; height:14px;
+    border-radius:4px;
+    border:1.5px solid var(--accent, var(--lav));
+    flex-shrink:0;
+    position:relative;
+  }
+  ul.items li .name .mark::after{
+    content:"";
+    position:absolute;
+    left:3px; top:0.5px;
+    width:4px; height:7px;
+    border-right:1.5px solid var(--accent, var(--lav));
+    border-bottom:1.5px solid var(--accent, var(--lav));
+    transform:rotate(40deg);
+  }
+  ul.items li .amt{
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-dim);
+  }
+
+  /* ---------- recommendations panel (sticky-note feel) ---------- */
+  .reco{
+    background: var(--surface);
+    border: 1.5px dashed var(--line-strong);
+    border-radius:18px;
+    padding:22px 20px;
+    position:relative;
+  }
+  .reco::before{
+    content:"";
+    position:absolute;
+    top:-10px; left:24px;
+    width:52px; height:18px;
+    background: var(--lav);
+    opacity:0.5;
+    transform: rotate(-3deg);
+    border-radius:3px;
+  }
+
+  .reco-head{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    margin-bottom:16px;
+  }
+  .reco-head h2{
+    font-family:'Fraunces', serif;
+    font-size:17px;
+    font-weight:600;
+    margin:0;
+  }
+  .reco-head .spark{ color: var(--lav-soft); }
+
+  .reco-note{
+    font-family:'Caveat', cursive;
+    font-size:16px;
+    color: var(--ink-dim);
+    margin: -8px 0 18px;
+    line-height:1.35;
+  }
+
+  .reco-list{
+    list-style:none;
+    margin:0; padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+
+  .reco-item{
+    display:flex;
+    gap:12px;
+    padding:12px 12px 12px 13px;
+    background: var(--surface-2);
+    border:1px solid var(--line);
+    border-left: 3px solid var(--accent, var(--lav));
+    border-radius:10px;
+  }
+  .reco-item .icon{
+    font-size:16px;
+    line-height:1.2;
+  }
+  .reco-item .txt strong{
+    display:block;
+    font-size:13.5px;
+    color: var(--ink);
+    margin-bottom:3px;
+    font-weight:600;
+  }
+  .reco-item .txt span{
+    font-size:12.5px;
+    color: var(--ink-dim);
+    line-height:1.4;
+  }
+  .reco-item.save{ --accent: var(--mint); }
+  .reco-item.warn{ --accent: var(--peach); }
+  .reco-item.tip{ --accent: var(--lav); }
+
+  .reco-footer{
+    margin-top:18px;
+    padding-top:14px;
+    border-top:1px dashed var(--line);
+    font-size:11.5px;
+    color: var(--ink-faint);
+    display:flex;
+    align-items:center;
+    gap:7px;
+  }
+  .pulse{
+    width:6px;height:6px;border-radius:50%;
+    background: var(--mint);
+    box-shadow:0 0 0 0 rgba(163,221,196,0.5);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%{ box-shadow:0 0 0 0 rgba(163,221,196,0.45); }
+    70%{ box-shadow:0 0 0 7px rgba(163,221,196,0); }
+    100%{ box-shadow:0 0 0 0 rgba(163,221,196,0); }
+  }
+
+  @media (max-width: 880px){
+    .board{ grid-template-columns: 1fr; }
+    .categories{ grid-template-columns: 1fr; }
+    .stats{ grid-template-columns: 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .pulse{ animation:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <h1>Budget</h1>
+        <div class="sub">a little tidier every month</div>
+      </div>
+    </div>
+    <div class="period-pill">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      August 2026
+    </div>
+  </header>
+
+  <!-- STAT SUMMARY -->
+  <section class="stats" id="stats">
+    <div class="stat income">
+      <div class="stat-label"><span class="dot"></span>Total income</div>
+      <div class="stat-value"><sup>$</sup><span data-field="income">4,850</span></div>
+      <div class="stat-delta up">↑ steady vs last month</div>
+    </div>
+    <div class="stat spent">
+      <div class="stat-label"><span class="dot"></span>Total spent</div>
+      <div class="stat-value"><sup>$</sup><span data-field="spent">3,214</span></div>
+      <div class="stat-delta down">↑ 6% vs last month</div>
+    </div>
+    <div class="stat remaining">
+      <div class="stat-label"><span class="dot"></span>Remaining</div>
+      <div class="stat-value"><sup>$</sup><span data-field="remaining">1,636</span></div>
+      <div class="stat-delta">34% of income left</div>
+    </div>
+  </section>
+
+  <div class="board">
+    <!-- CATEGORY LISTS -->
+    <section>
+      <div class="section-title">
+        <h2>Categories</h2>
+        <span class="count">4 lists</span>
+      </div>
+
+      <div class="categories" id="categories">
+
+        <div class="card cat-food">
+          <div class="card-head">
+            <div>
+              <h3>Food &amp; groceries</h3>
+              <div class="cap">$620 of $750 budget</div>
+            </div>
+            <div class="card-total">$620</div>
+          </div>
+          <div class="track"><div class="fill" style="width:83%"></div></div>
+          <ul class="items">
+            <li><span class="name"><span class="mark"></span>Groceries — Trader Joe's</span><span class="amt">$310</span></li>
+            <li><span class="name"><span class="mark"></span>Dining out</span><span class="amt">$215</span></li>
+            <li><span class="name"><span class="mark"></span>Coffee shops</span><span class="amt">$95</span></li>
+          </ul>
+        </div>
+
+        <div class="card cat-home">
+          <div class="card-head">
+            <div>
+              <h3>Home &amp; bills</h3>
+              <div class="cap">$1,480 of $1,500 budget</div>
+            </div>
+            <div class="card-total">$1,480</div>
+          </div>
+          <div class="track"><div class="fill" style="width:98%"></div></div>
+          <ul class="items">
+            <li><span class="name"><span class="mark"></span>Rent</span><span class="amt">$1,150</span></li>
+            <li><span class="name"><span class="mark"></span>Utilities</span><span class="amt">$180</span></li>
+            <li><span class="name"><span class="mark"></span>Internet</span><span class="amt">$70</span></li>
+            <li><span class="name"><span class="mark"></span>Renter's insurance</span><span class="amt">$80</span></li>
+          </ul>
+        </div>
+
+        <div class="card cat-fun">
+          <div class="card-head">
+            <div>
+              <h3>Fun &amp; personal</h3>
+              <div class="cap">$412 of $400 budget</div>
+            </div>
+            <div class="card-total">$412</div>
+          </div>
+          <div class="track"><div class="fill" style="width:100%"></div></div>
+          <ul class="items">
+            <li><span class="name"><span class="mark"></span>Streaming subs</span><span class="amt">$47</span></li>
+            <li><span class="name"><span class="mark"></span>Hobbies (pedal parts)</span><span class="amt">$210</span></li>
+            <li><span class="name"><span class="mark"></span>Nights out</span><span class="amt">$155</span></li>
+          </ul>
+        </div>
+
+        <div class="card cat-save">
+          <div class="card-head">
+            <div>
+              <h3>Savings &amp; goals</h3>
+              <div class="cap">$702 of $700 target</div>
+            </div>
+            <div class="card-total">$702</div>
+          </div>
+          <div class="track"><div class="fill" style="width:100%"></div></div>
+          <ul class="items">
+            <li><span class="name"><span class="mark"></span>Emergency fund</span><span class="amt">$400</span></li>
+            <li><span class="name"><span class="mark"></span>Trip fund</span><span class="amt">$202</span></li>
+            <li><span class="name"><span class="mark"></span>Roth IRA</span><span class="amt">$100</span></li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- RECOMMENDATIONS -->
+    <aside class="reco" id="recommendations">
+      <div class="reco-head">
+        <span class="spark">✦</span>
+        <h2>Recommendations</h2>
+      </div>
+      <p class="reco-note">notes from your budgeting agent</p>
+
+      <ul class="reco-list" id="reco-list">
+        <li class="reco-item warn">
+          <span class="icon">⚠</span>
+          <span class="txt">
+            <strong>Fun &amp; personal is over budget</strong>
+            <span>You're $12 past target this month — mostly hobby purchases. Consider capping next month at $380.</span>
+          </span>
+        </li>
+        <li class="reco-item tip">
+          <span class="icon">💡</span>
+          <span class="txt">
+            <strong>Dining out crept up</strong>
+            <span>Up 18% from last month. Two fewer takeout orders would bring Food back under budget with room to spare.</span>
+          </span>
+        </li>
+        <li class="reco-item save">
+          <span class="icon">✓</span>
+          <span class="txt">
+            <strong>Savings goal hit</strong>
+            <span>Nice work — you crossed your $700 savings target. Consider raising it to $750 next cycle.</span>
+          </span>
+        </li>
+      </ul>
+
+      <div class="reco-footer">
+        <span class="pulse"></span>
+        Live suggestions connect via agent API
+      </div>
+    </aside>
+  </div>
+
+</div>
+
+<script>
+  /*
+    ------------------------------------------------------------------
+    DATA LAYER — replace this block once the agent API is wired up.
+    Everything below reads from these three shapes, so swapping in
+    real fetch() calls just means calling the render*() functions
+    with real data instead of the mock objects below.
+    ------------------------------------------------------------------
+  */
+
+  const mockTotals = {
+    income: 4850,
+    spent: 3214,
+    remaining: 1636
+  };
+
+  const mockCategories = [
+    // { id, name, spent, budget, accentClass, items:[{name, amount}] }
+  ];
+
+  const mockRecommendations = [
+    // { type: 'warn'|'tip'|'save', title, body }
+  ];
+
+  // ---- render helpers (call these with live data from your agent API) ----
+
+  function formatMoney(n){
+    return Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
+  }
+
+  function renderTotals(totals){
+    document.querySelector('[data-field="income"]').textContent = formatMoney(totals.income);
+    document.querySelector('[data-field="spent"]').textContent = formatMoney(totals.spent);
+    document.querySelector('[data-field="remaining"]').textContent = formatMoney(totals.remaining);
+  }
+
+  function renderRecommendations(list){
+    const iconFor = { warn: '⚠', tip: '💡', save: '✓' };
+    const container = document.getElementById('reco-list');
+    if(!list || !list.length) return;
+    container.innerHTML = list.map(r => `
+      <li class="reco-item ${r.type}">
+        <span class="icon">${iconFor[r.type] || '•'}</span>
+        <span class="txt">
+          <strong>${r.title}</strong>
+          <span>${r.body}</span>
+        </span>
+      </li>
+    `).join('');
+  }
+
+  // Example wiring for later:
+  //
+  // async function loadFromAgent(){
+  //   const res = await fetch('/api/budget-summary');
+  //   const data = await res.json();
+  //   renderTotals(data.totals);
+  //   renderRecommendations(data.recommendations);
+  //   // categories would need a renderCategories(data.categories) function
+  //   // built the same way once the category schema from your agent is known.
+  // }
+  // loadFromAgent();
+
+  // For now the static markup above already reflects the mock data,
+  // so no call is made on load. Uncomment renderTotals(mockTotals) etc.
+  // once you're feeding this from real objects.
+</script>
+</body>
+</html>
